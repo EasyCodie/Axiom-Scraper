@@ -22,6 +22,9 @@ async def setup_authentication(
     url: str = "https://axiom.trade",
     storage_state_path: str = "storage_state.json",
     browser_channel: Optional[str] = "chrome",
+    persistent: bool = False,
+    user_data_dir: str = ".user-data/axiom",
+    no_prompt: bool = False,
 ) -> None:
     """
     Launch a browser for manual Google OAuth login and save the session state.
@@ -29,7 +32,10 @@ async def setup_authentication(
     Args:
         url: Axiom URL to open for authentication.
         storage_state_path: Destination file for the Playwright storage state.
-        browser_channel: The Playwright browser channel (for Chrome pass "chrome").
+        browser_channel: The Playwright browser channel (e.g., "chrome", "msedge").
+        persistent: Launch a persistent context with a real user profile directory.
+        user_data_dir: Directory for persistent user data when persistent=True.
+        no_prompt: If True, do not block on interactive prompts.
     """
     print("=" * 60)
     print("Axiom Authentication Setup")
@@ -37,38 +43,84 @@ async def setup_authentication(
     print("\nThis will open a browser window where you can log in to Axiom.")
     print("After logging in successfully, return to this terminal.")
     print("\nYour session will be saved to:", storage_state_path)
-    input("\nPress Enter to continue or Ctrl+C to cancel...")
+    if not no_prompt:
+        input("\nPress Enter to continue or Ctrl+C to cancel...")
 
     async with async_playwright() as playwright:
         print("\n[1/3] Launching browser...")
-        launch_kwargs: dict[str, Any] = {"headless": False}
+        common_args = ["--disable-blink-features=AutomationControlled"]
+        context = None
+        browser = None
 
+        # Prefer a real installed browser channel to reduce OAuth friction
+        channels_to_try = []
         if browser_channel:
-            launch_kwargs["channel"] = browser_channel
+            channels_to_try.append(browser_channel)
+        # On Windows, Edge is commonly available
+        if browser_channel != "msedge":
+            channels_to_try.append("msedge")
+        # Fallback to bundled Chromium (no channel)
+        channels_to_try.append(None)
 
-        try:
-            browser = await playwright.chromium.launch(**launch_kwargs)
-        except Exception as launch_error:
-            if browser_channel:
-                print(
-                    f"[warning] Failed to launch channel '{browser_channel}': {launch_error}"
-                )
-                print("[warning] Falling back to the bundled Chromium build.")
-                browser = await playwright.chromium.launch(headless=False)
-            else:
-                raise
+        last_error: Optional[Exception] = None
 
-        context = await browser.new_context(
-            viewport={"width": 1920, "height": 1080},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-        )
+        for ch in channels_to_try:
+            try:
+                if persistent:
+                    context = await playwright.chromium.launch_persistent_context(
+                        user_data_dir=user_data_dir,
+                        channel=ch,
+                        headless=False,
+                        args=common_args,
+                        viewport={"width": 1920, "height": 1080},
+                        accept_downloads=True,
+                    )
+                    browser = context.browser
+                else:
+                    launch_kwargs: dict[str, Any] = {"headless": False, "args": common_args}
+                    if ch:
+                        launch_kwargs["channel"] = ch
+                    browser = await playwright.chromium.launch(**launch_kwargs)
+                    context = await browser.new_context(
+                        viewport={"width": 1920, "height": 1080}
+                    )
+
+                # If we made it here without exception, we are launched
+                if ch:
+                    print(f"[info] Using browser channel: {ch} (persistent={persistent})")
+                else:
+                    print(
+                        f"[warning] Using bundled Chromium (channel unavailable). persistent={persistent}"
+                    )
+                last_error = None
+                break
+            except Exception as e:
+                last_error = e
+                if ch:
+                    print(f"[warning] Failed to launch channel '{ch}': {e}")
+                else:
+                    print(f"[warning] Failed to launch bundled Chromium: {e}")
+                continue
+
+        if context is None:
+            # Exhausted all options
+            raise RuntimeError(
+                f"Could not launch any browser (last_error={last_error})"
+            )
 
         print("[2/3] Opening Axiom login page...")
         page = await context.new_page()
+        # Minimal stealth to reduce automation fingerprint for Google OAuth
+        await page.add_init_script(
+            """
+            // Hide webdriver flag
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            // Set languages
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            // Fake plugins length
+            Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5] });
+            """
+        )
 
         try:
             await page.goto(url, wait_until="networkidle", timeout=30000)
@@ -80,7 +132,10 @@ async def setup_authentication(
             print("2. Complete the Google OAuth flow.")
             print("3. Wait until you see the Axiom dashboard.")
             print("4. Return to this terminal before closing the browser.")
-            input("\nPress Enter here once you are logged in and see the dashboard...")
+            if not no_prompt:
+                input(
+                    "\nPress Enter here once you are logged in and see the dashboard..."
+                )
         except Exception as error:
             print(f"\n[warning] Encountered an error while loading the page: {error}")
             print("If you've finished logging in, the session may still be saved.")
@@ -155,8 +210,11 @@ def main() -> None:
     """Entry point for the authentication helper CLI."""
     import argparse
 
-    if sys.platform.startswith("win"):
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # On Windows, Playwright spawns subprocesses; using the Selector policy
+    # breaks asyncio.create_subprocess_exec with NotImplementedError.
+    # Ensure the Proactor policy (default on Python 3.8+) is used.
+    if sys.platform.startswith("win") and hasattr(asyncio, "WindowsProactorEventLoopPolicy"):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
     parser = argparse.ArgumentParser(description="Setup Axiom authentication")
     parser.add_argument(
@@ -170,6 +228,28 @@ def main() -> None:
         action="store_true",
         help="Verify existing authentication instead of setting up new.",
     )
+    parser.add_argument(
+        "--browser-channel",
+        type=str,
+        default="chrome",
+        help="Browser channel to use (e.g., 'chrome', 'msedge').",
+    )
+    parser.add_argument(
+        "--persistent",
+        action="store_true",
+        help="Use persistent user profile to reduce OAuth friction.",
+    )
+    parser.add_argument(
+        "--user-data-dir",
+        type=str,
+        default=".user-data/axiom",
+        help="Directory for persistent browser profile (when --persistent).",
+    )
+    parser.add_argument(
+        "--no-prompt",
+        action="store_true",
+        help="Skip interactive prompts (advanced).",
+    )
 
     args = parser.parse_args()
 
@@ -182,7 +262,11 @@ def main() -> None:
         else:
             asyncio.run(
                 setup_authentication(
-                    storage_state_path=args.storage_state, browser_channel="chrome"
+                    storage_state_path=args.storage_state,
+                    browser_channel=args.browser_channel,
+                    persistent=bool(args.persistent),
+                    user_data_dir=args.user_data_dir,
+                    no_prompt=bool(args.no_prompt),
                 )
             )
     except KeyboardInterrupt:
