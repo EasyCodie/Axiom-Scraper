@@ -1,0 +1,72 @@
+# Axiom Scraper Configuration
+# Precedence: CLI flags > config.yaml > .env defaults
+
+# Target chain (Solana)
+chain: sol
+
+# Pulse scraper settings
+pulse:
+  url: "https://axiom.trade/pulse?chain=sol"
+  max_rows: 20
+  scroll_timeout: 20  # seconds
+  delay_between_scrolls: 1  # seconds
+  # Network intercept URL patterns (regex)
+  api_patterns:
+    - ".*api.*pulse.*"
+    - ".*graphql.*"
+  # DOM fallback selectors (if needed)
+  selectors:
+    token_row: "[data-testid='token-row'], .token-item, tr[data-token]"
+    token_name: "[data-testid='token-name'], .token-name"
+    contract_address: "[data-testid='ca'], .contract-address"
+    price: "[data-testid='price'], .price"
+
+# Trackers scraper settings
+tracker:
+  url: "https://axiom.trade/trackers?chain=sol"
+  max_events: 100
+  stream_timeout: 30  # seconds
+  # Network intercept URL patterns (regex)
+  api_patterns:
+    - ".*api.*tracker.*"
+    - ".*api.*wallet.*"
+    - ".*websocket.*"
+  # DOM fallback selectors
+  selectors:
+    event_row: "[data-testid='tracker-event'], .tracker-event, tr[data-event]"
+    wallet: "[data-testid='wallet'], .wallet-address"
+    action: "[data-testid='action'], .action"
+
+# Rate limiting and retries
+rate_limit:
+  concurrent_requests: 5
+  delay_seconds: 2
+  max_retries: 3
+  backoff_factor: 2  # exponential: 1s, 2s, 4s
+
+# Playwright browser settings
+browser:
+  headless: true
+  viewport_width: 1920
+  viewport_height: 1080
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  timeout: 30000  # milliseconds
+
+# Database settings
+database:
+  path: "data/axiom.duckdb"
+  batch_size: 200  # batch inserts/upserts
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"  # json or text
+  dir: "logs"
+  rotation: "1 day"
+  retention: "14 days"
+
+# Timezone
+timezone: "Europe/Athens"  # EET (UTC+2)
+
+# Currency normalization
+currency: "USD"

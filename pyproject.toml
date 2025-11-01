@@ -1,0 +1,49 @@
+[project]
+name = "axiom-scraper"
+version = "0.1.0"
+description = "Axiom Meme-Coin Scoring Agent - Phase 1 MVP Data Scraper"
+requires-python = ">=3.10"
+dependencies = [
+    "playwright>=1.40.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "duckdb>=0.9.0",
+    "tenacity>=8.2.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.0",
+    "pytz>=2023.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["axiom*"]
+exclude = ["configs*", "scripts*", "tests*"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
