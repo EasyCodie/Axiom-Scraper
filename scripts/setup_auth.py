@@ -22,7 +22,7 @@ async def setup_authentication(
     url: str = "https://axiom.trade",
     storage_state_path: str = "storage_state.json",
     browser_channel: Optional[str] = "chrome",
-    persistent: bool = False,
+    persistent: bool = True,
     user_data_dir: str = ".user-data/axiom",
     no_prompt: bool = False,
 ) -> None:
@@ -53,7 +53,7 @@ async def setup_authentication(
         browser = None
 
         # Prefer a real installed browser channel to reduce OAuth friction
-        channels_to_try = []
+        channels_to_try: list[Optional[str]] = []
         if browser_channel:
             channels_to_try.append(browser_channel)
         # On Windows, Edge is commonly available
@@ -67,6 +67,8 @@ async def setup_authentication(
         for ch in channels_to_try:
             try:
                 if persistent:
+                    # Ensure user data directory exists for persistent context
+                    Path(user_data_dir).mkdir(parents=True, exist_ok=True)
                     context = await playwright.chromium.launch_persistent_context(
                         user_data_dir=user_data_dir,
                         channel=ch,
@@ -145,7 +147,7 @@ async def setup_authentication(
         await context.storage_state(path=str(storage_path))
 
         await context.close()
-        await browser.close()
+        await browser.close() # type: ignore
 
         if storage_path.exists():
             print(f"\n[success] Authentication state saved to: {storage_state_path}")
@@ -234,10 +236,11 @@ def main() -> None:
         default="chrome",
         help="Browser channel to use (e.g., 'chrome', 'msedge').",
     )
+    # Persistent profile is default; provide opt-out flag
     parser.add_argument(
-        "--persistent",
+        "--no-persistent",
         action="store_true",
-        help="Use persistent user profile to reduce OAuth friction.",
+        help="Do NOT use persistent user profile (opt-out).",
     )
     parser.add_argument(
         "--user-data-dir",
@@ -264,7 +267,7 @@ def main() -> None:
                 setup_authentication(
                     storage_state_path=args.storage_state,
                     browser_channel=args.browser_channel,
-                    persistent=bool(args.persistent),
+                    persistent=not bool(args.no_persistent),
                     user_data_dir=args.user_data_dir,
                     no_prompt=bool(args.no_prompt),
                 )

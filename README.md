@@ -62,25 +62,38 @@ Expected output:
 
 ### 4. Setup Authentication
 
-Since Axiom requires Google OAuth login, you need to capture your session once:
+Since Axiom requires authentication, capture your session once. By default the script launches a persistent browser profile (more reliable for Google OAuth) using Chrome:
 
 ```powershell
 python scripts/setup_auth.py
 ```
 
+Edge option (recommended on Windows if Google flags the browser):
+
+```powershell
+python scripts/setup_auth.py --browser-channel msedge
+```
+
 This will:
-1. Open a browser window
+1. Open a browser window (persistent profile at `.user-data/axiom`)
 2. Navigate to Axiom
-3. Wait for you to log in with Google
+3. Let you log in (Google OAuth or email/password)
 4. Save your session to `storage_state.json`
 
 **Instructions during setup:**
-- Click "Sign in with Google" on Axiom
-- Complete Google authentication
+- Click "Sign in with Google" on Axiom (or use email/password if preferred)
+- Complete authentication
 - Wait until you see the Axiom dashboard
 - Close the browser window
 
 Your session will be saved and reused automatically by the scraper.
+
+**Auth script options:**
+- `--browser-channel` Choose browser channel (default: `chrome`; use `msedge` on Windows)
+- `--no-persistent` Opt-out of persistent profile (default is persistent)
+- `--user-data-dir` Directory for the persistent profile (default: `.user-data/axiom`)
+- `--no-prompt` Skip interactive prompts
+- `--verify` Verify existing session headlessly
 
 **Verify authentication:**
 ```powershell
