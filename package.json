@@ -1,0 +1,35 @@
+{
+  "name": "axiom-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@8.10.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter @axiom/web dev",
+    "build": "pnpm --filter @axiom/web build",
+    "start": "pnpm --filter @axiom/web start",
+    "lint": "pnpm --filter @axiom/web lint",
+    "type-check": "pnpm --filter @axiom/web type-check",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "prepare": "simple-git-hooks"
+  },
+  "devDependencies": {
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "simple-git-hooks": "^2.9.0"
+  },
+  "lint-staged": {
+    "apps/web/**/*.{ts,tsx,js,jsx,css,mdx,md}": [
+      "pnpm --filter @axiom/web exec prettier --write --"
+    ],
+    "apps/web/**/*.{ts,tsx}": [
+      "pnpm --filter @axiom/web exec eslint --fix --"
+    ]
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  }
+}
