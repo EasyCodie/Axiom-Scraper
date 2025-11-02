@@ -439,6 +439,250 @@ def init_database(db_path: str = "data/axiom.duckdb") -> None:
         )
         print("✓ Created indexes on 'token_price_history'")
 
+        # Create user_profiles table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                user_id VARCHAR PRIMARY KEY,
+                email VARCHAR,
+                display_name VARCHAR,
+                avatar_url VARCHAR,
+                created_at TIMESTAMP NOT NULL,
+                last_login_at TIMESTAMP,
+                preferences_json VARCHAR
+            );
+        """
+        )
+        print("✓ Created 'user_profiles' table")
+
+        # Create favorite_tokens table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS favorite_tokens (
+                user_id VARCHAR NOT NULL,
+                ca VARCHAR NOT NULL,
+                chain VARCHAR NOT NULL,
+                added_at TIMESTAMP NOT NULL,
+                notes VARCHAR,
+                PRIMARY KEY (user_id, ca, chain)
+            );
+        """
+        )
+        print("✓ Created 'favorite_tokens' table")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_favorite_tokens_user
+            ON favorite_tokens (user_id);
+        """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_favorite_tokens_ca
+            ON favorite_tokens (ca, chain);
+        """
+        )
+        print("✓ Created indexes on 'favorite_tokens'")
+
+        # Create watchlists table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS watchlists (
+                watchlist_id VARCHAR PRIMARY KEY,
+                user_id VARCHAR NOT NULL,
+                name VARCHAR NOT NULL,
+                description VARCHAR,
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL,
+                is_public BOOLEAN DEFAULT FALSE
+            );
+        """
+        )
+        print("✓ Created 'watchlists' table")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_watchlists_user
+            ON watchlists (user_id);
+        """
+        )
+        print("✓ Created indexes on 'watchlists'")
+
+        # Create watchlist_tokens table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS watchlist_tokens (
+                watchlist_id VARCHAR NOT NULL,
+                ca VARCHAR NOT NULL,
+                chain VARCHAR NOT NULL,
+                added_at TIMESTAMP NOT NULL,
+                position INTEGER,
+                notes VARCHAR,
+                PRIMARY KEY (watchlist_id, ca, chain)
+            );
+        """
+        )
+        print("✓ Created 'watchlist_tokens' table")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_watchlist_tokens_watchlist
+            ON watchlist_tokens (watchlist_id);
+        """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_watchlist_tokens_ca
+            ON watchlist_tokens (ca, chain);
+        """
+        )
+        print("✓ Created indexes on 'watchlist_tokens'")
+
+        # Create saved_comparisons table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS saved_comparisons (
+                comparison_id VARCHAR PRIMARY KEY,
+                user_id VARCHAR NOT NULL,
+                name VARCHAR NOT NULL,
+                description VARCHAR,
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL
+            );
+        """
+        )
+        print("✓ Created 'saved_comparisons' table")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_saved_comparisons_user
+            ON saved_comparisons (user_id);
+        """
+        )
+        print("✓ Created indexes on 'saved_comparisons'")
+
+        # Create comparison_tokens table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS comparison_tokens (
+                comparison_id VARCHAR NOT NULL,
+                ca VARCHAR NOT NULL,
+                chain VARCHAR NOT NULL,
+                position INTEGER NOT NULL,
+                added_at TIMESTAMP NOT NULL,
+                PRIMARY KEY (comparison_id, ca, chain)
+            );
+        """
+        )
+        print("✓ Created 'comparison_tokens' table")
+
+        conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_tokens_position
+            ON comparison_tokens (comparison_id, position);
+        """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_comparison_tokens_ca
+            ON comparison_tokens (ca, chain);
+        """
+        )
+        print("✓ Created indexes on 'comparison_tokens'")
+
+        # Create alerts table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS alerts (
+                alert_id VARCHAR PRIMARY KEY,
+                user_id VARCHAR NOT NULL,
+                ca VARCHAR NOT NULL,
+                chain VARCHAR NOT NULL,
+                alert_type VARCHAR NOT NULL,
+                condition_json VARCHAR NOT NULL,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL,
+                last_triggered_at TIMESTAMP,
+                trigger_count INTEGER DEFAULT 0
+            );
+        """
+        )
+        print("✓ Created 'alerts' table")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_alerts_user
+            ON alerts (user_id);
+        """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_alerts_ca
+            ON alerts (ca, chain);
+        """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_alerts_active
+            ON alerts (is_active);
+        """
+        )
+        print("✓ Created indexes on 'alerts'")
+
+        # Create alert_channels table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS alert_channels (
+                alert_id VARCHAR NOT NULL,
+                channel_type VARCHAR NOT NULL,
+                channel_config_json VARCHAR NOT NULL,
+                is_enabled BOOLEAN DEFAULT TRUE,
+                PRIMARY KEY (alert_id, channel_type)
+            );
+        """
+        )
+        print("✓ Created 'alert_channels' table")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_alert_channels_alert
+            ON alert_channels (alert_id);
+        """
+        )
+        print("✓ Created indexes on 'alert_channels'")
+
+        # Create alert_events table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS alert_events (
+                event_id VARCHAR PRIMARY KEY,
+                alert_id VARCHAR NOT NULL,
+                triggered_at TIMESTAMP NOT NULL,
+                condition_met_json VARCHAR NOT NULL,
+                delivery_status VARCHAR NOT NULL,
+                delivery_attempts INTEGER DEFAULT 0,
+                delivered_at TIMESTAMP,
+                error_message VARCHAR
+            );
+        """
+        )
+        print("✓ Created 'alert_events' table")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_alert_events_alert
+            ON alert_events (alert_id);
+        """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_alert_events_triggered
+            ON alert_events (triggered_at);
+        """
+        )
+        print("✓ Created indexes on 'alert_events'")
+
         # Seed denormalized tables from existing data
         seed_denormalized_tables(conn)
 

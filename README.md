@@ -197,6 +197,176 @@ with Database("data/axiom.duckdb") as db:
     history = db.get_price_history("contract_address")
 ```
 
+## User-Centric Features
+
+The database includes user-centric tables for favorites, watchlists, comparisons, and alerts:
+
+### User Profiles
+
+Store user information and preferences:
+
+```python
+from axiom.core.db import Database
+from axiom.core.models import UserProfile, eet_now
+
+with Database("data/axiom.duckdb") as db:
+    profile = UserProfile(
+        user_id="user-uuid",
+        email="user@example.com",
+        display_name="Username",
+        created_at=eet_now(),
+    )
+    db.upsert_user_profile(profile)
+    
+    # Retrieve profile
+    user = db.get_user_profile("user-uuid")
+```
+
+### Favorites
+
+Track favorite tokens per user:
+
+```python
+from axiom.core.models import FavoriteToken
+
+with Database("data/axiom.duckdb") as db:
+    favorite = FavoriteToken(
+        user_id="user-uuid",
+        ca="token-address",
+        chain="sol",
+        added_at=eet_now(),
+        notes="Interesting project",
+    )
+    db.add_favorite_token(favorite)
+    
+    # List favorites
+    favorites = db.list_favorite_tokens("user-uuid")
+    
+    # Remove favorite
+    db.remove_favorite_token("user-uuid", "token-address")
+```
+
+### Watchlists
+
+Create custom watchlists with multiple tokens:
+
+```python
+from axiom.core.models import Watchlist, WatchlistToken
+import uuid
+
+with Database("data/axiom.duckdb") as db:
+    watchlist = Watchlist(
+        watchlist_id=str(uuid.uuid4()),
+        user_id="user-uuid",
+        name="My Watchlist",
+        description="Top picks",
+        created_at=eet_now(),
+        updated_at=eet_now(),
+    )
+    db.create_watchlist(watchlist)
+    
+    # Add tokens to watchlist
+    token = WatchlistToken(
+        watchlist_id=watchlist.watchlist_id,
+        ca="token-address",
+        chain="sol",
+        added_at=eet_now(),
+        position=1,
+    )
+    db.add_watchlist_token(token)
+    
+    # List watchlists and tokens
+    watchlists = db.list_watchlists("user-uuid")
+    tokens = db.list_watchlist_tokens(watchlist.watchlist_id)
+```
+
+### Comparisons
+
+Save token comparisons for side-by-side analysis:
+
+```python
+from axiom.core.models import SavedComparison, ComparisonToken
+
+with Database("data/axiom.duckdb") as db:
+    comparison = SavedComparison(
+        comparison_id=str(uuid.uuid4()),
+        user_id="user-uuid",
+        name="Token Comparison",
+        created_at=eet_now(),
+        updated_at=eet_now(),
+    )
+    db.create_comparison(comparison)
+    
+    # Add tokens at specific positions
+    for i, ca in enumerate(["token-a", "token-b", "token-c"], 1):
+        token = ComparisonToken(
+            comparison_id=comparison.comparison_id,
+            ca=ca,
+            chain="sol",
+            position=i,
+            added_at=eet_now(),
+        )
+        db.add_comparison_token(token)
+```
+
+### Alerts
+
+Set up price alerts with delivery channels:
+
+```python
+from axiom.core.models import Alert, AlertChannel, AlertEvent
+import json
+
+with Database("data/axiom.duckdb") as db:
+    alert = Alert(
+        alert_id=str(uuid.uuid4()),
+        user_id="user-uuid",
+        ca="token-address",
+        chain="sol",
+        alert_type="price_above",
+        condition_json=json.dumps({"threshold": 1.0}),
+        is_active=True,
+        created_at=eet_now(),
+        updated_at=eet_now(),
+    )
+    db.create_alert(alert)
+    
+    # Add delivery channel
+    channel = AlertChannel(
+        alert_id=alert.alert_id,
+        channel_type="email",
+        channel_config_json=json.dumps({"email": "user@example.com"}),
+    )
+    db.add_alert_channel(channel)
+    
+    # Log alert trigger
+    event = AlertEvent(
+        event_id=str(uuid.uuid4()),
+        alert_id=alert.alert_id,
+        triggered_at=eet_now(),
+        condition_met_json=json.dumps({"price": 1.5}),
+        delivery_status="pending",
+    )
+    db.log_alert_event(event)
+```
+
+### Database Migration
+
+When upgrading an existing database to include user-centric tables:
+
+```powershell
+# Backup existing database
+cp data/axiom.duckdb data/axiom.duckdb.backup
+
+# Run init_db.py to add new tables (existing data is preserved)
+python scripts/init_db.py
+
+# Verify new tables
+python -c "from axiom.core.db import Database; db = Database(); print(db.get_stats())"
+```
+
+The script creates tables using `CREATE TABLE IF NOT EXISTS`, so existing data remains intact.
+
 ## Project Structure
 
 ```

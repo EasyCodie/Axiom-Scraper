@@ -82,3 +82,14 @@ rate_limit:
   delay_sec: 2
 db:
   file: "data/mvp.db"
+```
+
+## 8. User Data Tables  
+- User personalization features are stored in DuckDB via `user_profiles`, `favorite_tokens`, `watchlists`, `watchlist_tokens`, `saved_comparisons`, `comparison_tokens`, `alerts`, `alert_channels`, and `alert_events`.  
+- All tables reference `user_profiles.user_id` (Supabase UUID); DuckDB lacks cascade constraints, so the `Database` helpers manually clean up child rows.  
+- CRUD helpers live in `axiom.core.db.Database`; prefer the typed Pydantic models in `axiom.core.models` for inserts/updates.  
+- To add these tables to an existing DuckDB file, rerun the initializer with the same path (no data loss):  
+  ```bash
+  python scripts/init_db.py --db-path data/axiom.duckdb
+  ```
+- Seeded data is unaffected; tables use `CREATE TABLE IF NOT EXISTS` and maintain existing content
