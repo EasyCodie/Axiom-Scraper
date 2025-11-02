@@ -14,7 +14,8 @@ dependencies = [
     "pytz>=2023.3",
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
-    "redis>=5.0.0",
+    # Align with fastapi-cache2 which pins redis<5.0.0
+    "redis>=4.5,<5.0.0",
     "fastapi-cache2[redis]>=0.2.1",
     "slowapi>=0.1.9",
     "python-jose[cryptography]>=3.3.0",
