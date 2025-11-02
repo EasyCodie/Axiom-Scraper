@@ -124,6 +124,31 @@ python -m axiom.cli.run_scrape --mode=all
 --headful           Run browser in visible mode (default: headless)
 ```
 
+## Web Experience
+
+A Next.js 14 application lives in `apps/web` for the upcoming analyst dashboard.
+
+### Prerequisites
+
+- Node.js 18+
+- [pnpm](https://pnpm.io/) 8+
+
+### Actions
+
+```bash
+# Install dependencies (root)
+pnpm install
+
+# Run development server
+pnpm dev
+
+# Lint & format
+pnpm lint
+pnpm format:check
+```
+
+Read `apps/web/README.md` for full UI documentation, theme tokens, and component usage.
+
 ## Analytics Layer
 
 The analytics layer aggregates raw scraper data into actionable token metrics and summaries:

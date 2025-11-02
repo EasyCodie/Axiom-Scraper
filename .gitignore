@@ -44,6 +44,12 @@ logs/
 *.duckdb
 *.log
 
+# Node
+node_modules/
+.pnpm-store/
+.next/
+.turbo/
+
 # Testing
 .pytest_cache/
 .coverage

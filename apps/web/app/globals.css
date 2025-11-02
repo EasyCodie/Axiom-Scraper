@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 230 35% 7%;
+  --foreground: 210 40% 96%;
+  --muted: 236 21% 15%;
+  --muted-foreground: 230 15% 70%;
+  --accent: 239 84% 67%;
+  --accent-foreground: 214 32% 96%;
+  --border: 231 22% 18%;
+  --input: 229 22% 22%;
+  --ring: 220 100% 51%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 214 32% 96%;
+  --secondary: 163 72% 47%;
+  --secondary-foreground: 160 84% 15%;
+  --card: 230 32% 9%;
+  --card-foreground: 213 33% 94%;
+  --popover: 232 35% 9%;
+  --popover-foreground: 210 40% 96%;
+  --success: 145 62% 47%;
+  --warning: 35 92% 57%;
+  --error: 0 84% 60%;
+  --info: 221 83% 53%;
+  --radius-sm: 0.5rem;
+  --radius-lg: 1.25rem;
+}
+
+.dark {
+  --background: 230 35% 5%;
+  --foreground: 210 40% 98%;
+}
+
+body {
+  @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased;
+}
+
+*,
+*::before,
+*::after {
+  @apply transition-colors duration-200 ease-out;
+}
+
+::-webkit-scrollbar {
+  width: 0.6rem;
+  height: 0.6rem;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-dark-700;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-900;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    scroll-behavior: smooth;
+    background-color: hsl(var(--background));
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold text-[hsl(var(--foreground))];
+  }
+
+  p {
+    @apply text-[hsl(var(--muted-foreground))];
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply border border-[hsl(var(--border))] bg-[hsla(var(--background),0.8)] backdrop-blur-xl;
+  }
+
+  .ring-surface {
+    @apply ring-1 ring-[hsl(var(--border))];
+  }
+}
