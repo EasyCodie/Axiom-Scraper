@@ -41,13 +41,14 @@ The MVP (Phase 1) focuses exclusively on **data ingestion**—building a robust 
 - Data normalization with Pydantic models (`PulseItem`, `TrackerEvent`).
 - Local storage via SQLite or DuckDB.
 - CLI runner for manual and scheduled scrapes.
+- Analytics layer (`tokens`, `token_metrics`, `token_summaries`, `token_price_history`) with automated scoring and summaries.
 - Logging, error handling, and deduplication.
 
 #### Out of Scope (Phase 1)
-- Scoring logic (0–100 scale).
-- LLM summarization and report generation.
+- LLM-based (GPT/Claude) summarization and report generation.
 - UI/dashboard components.
 - Multi-chain expansion beyond Solana.
+- Automated trading signals.
 
 ---
 
@@ -78,6 +79,14 @@ The MVP (Phase 1) focuses exclusively on **data ingestion**—building a robust 
   - `python run_scrape.py --mode=trackers`
   - `python run_scrape.py --all`
 - Configurable caps: `max_rows`, `max_events`, `rate_limit`.
+
+#### 5.5 Analytics Layer
+- Rebuild denormalized tables/views (`tokens`, `token_metrics`, `token_summaries`, `token_price_history`).
+- Compute token-level metrics: price momentum, volume deltas, trade counts, liquidity proxy, buy/sell ratios.
+- Calculate Axiom composite score (0–100) and generate risk flags.
+- Produce five-bullet token summaries per refresh.
+- Expose CLI: `python -m axiom.cli.analytics --chain=sol` with JSON output option.
+- Provide database helpers for API layer (`list_tokens`, `get_token`, `get_token_pulse`, `get_token_trackers`, `get_price_history`).
 
 ---
 
