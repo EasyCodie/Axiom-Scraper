@@ -153,36 +153,36 @@ Each scraper operates independently, capturing live data from Axiom, parsing it 
 
 ### System Flow
 
-               ┌────────────────────────────┐
-               │        CLI Layer            │
+               ┌─────────────────────────────┐
+               │          CLI Layer          │
                │      (run_scrape.py)        │
-               └─────────────┬───────────────┘
-                             │
-                             ▼
-    ┌──────────────────────────────────────────────────┐
-    │                Scraper Layer                     │
-    │  ┌──────────────────────┐   ┌────────────────────┐│
-    │  │   Pulse Scraper      │   │  Trackers Scraper  ││
-    │  │ (Playwright + JSON)  │   │ (Playwright + JSON)││
-    │  └───────────┬──────────┘   └──────────┬─────────┘│
-    └───────────────┼────────────────────────┼───────────┘
-                    │                        │
-                    ▼                        ▼
-    ┌────────────────────┐        ┌─────────────────────┐
+               └───────────────┬─────────────┘
+                               │
+                               ▼
+    ┌────────────────────────────────────────────────────┐
+    │                   Scraper Layer                    │
+    │  ┌──────────────────────┐   ┌────────────────────┐ │
+    │  │   Pulse Scraper      │   │  Trackers Scraper  │ │
+    │  │ (Playwright + JSON)  │   │ (Playwright + JSON)│ │
+    │  └───────────┬──────────┘   └──────────┬─────────┘ │
+    └──────────────┼─────────────────────────┼───────────┘
+                   │                         │
+                   ▼                         ▼
+    ┌─────────────────────┐        ┌─────────────────────┐
     │  Data Parser Layer  │        │  Data Parser Layer  │
     │ (Pydantic Models)   │        │ (Pydantic Models)   │
     └──────────┬──────────┘        └──────────┬──────────┘
-               │                             │
-               ▼                             ▼
-    ┌────────────────────┐        ┌─────────────────────┐
+               │                              │
+               ▼                              ▼
+    ┌─────────────────────┐        ┌─────────────────────┐
     │   Storage Layer     │        │   Storage Layer     │
     │ (SQLite / DuckDB)   │        │ (SQLite / DuckDB)   │
     └──────────┬──────────┘        └──────────┬──────────┘
-               │                             │
-               ▼                             ▼
+               │                              │
+               ▼                              ▼
           ┌─────────────────────────────────────────────┐
-          │            Logging & Validation              │
-          │ (Dedupe, Schema Checks, Run Metadata)        │
+          │            Logging & Validation             │
+          │ (Dedupe, Schema Checks, Run Metadata)       │
           └─────────────────────────────────────────────┘
 
 ### Layer Descriptions
@@ -270,7 +270,7 @@ This modular architecture ensures that each component can evolve independently �
 ---
 
 ### 14. Approval
-**Owner:** Fyodor Golovin  
+**Owner and Lead Dev:** Ivan  
 **Phase:** 1 (MVP – Data Ingestion)  
 **Status:** In Development  
 **Next Review:** After completion of Pulse + Trackers scraper testing
