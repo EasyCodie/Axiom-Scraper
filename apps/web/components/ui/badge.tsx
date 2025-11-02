@@ -5,7 +5,7 @@ import type * as React from 'react';
 import { cn } from '@/lib/utils';
 
 export type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
-  variant?: 'neutral' | 'success' | 'warning' | 'destructive';
+  variant?: 'neutral' | 'success' | 'warning' | 'destructive' | 'outline';
 };
 
 const badgeVariants: Record<NonNullable<BadgeProps['variant']>, string> = {
@@ -17,6 +17,8 @@ const badgeVariants: Record<NonNullable<BadgeProps['variant']>, string> = {
     'bg-[hsl(var(--warning))]/20 text-[hsl(var(--warning))] ring-1 ring-[hsl(var(--warning))/0.5]',
   destructive:
     'bg-[hsl(var(--error))]/20 text-[hsl(var(--error))] ring-1 ring-[hsl(var(--error))/0.5]',
+  outline:
+    'bg-transparent text-[hsl(var(--foreground))] ring-1 ring-[hsl(var(--border))]/60',
 };
 
 export function Badge({ className, variant = 'neutral', ...props }: BadgeProps) {

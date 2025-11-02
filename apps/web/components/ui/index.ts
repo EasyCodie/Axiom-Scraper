@@ -3,3 +3,8 @@ export * from './card';
 export * from './badge';
 export * from './skeleton';
 export * from './token-avatar';
+export * from './token-card';
+export * from './metric-chip';
+export * from './popover';
+export * from './search-bar';
+export * from './filter-drawer';

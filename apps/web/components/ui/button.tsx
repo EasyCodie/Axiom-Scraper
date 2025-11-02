@@ -10,6 +10,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        default:
+          'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-glow-sm hover:bg-[hsl(var(--primary))]/90',
         primary:
           'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-glow-sm hover:bg-[hsl(var(--primary))]/90',
         secondary:
