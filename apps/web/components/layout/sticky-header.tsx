@@ -127,6 +127,12 @@ export function StickyHeader() {
           </Link>
 
           <nav className="hidden items-center space-x-6 text-sm font-medium text-[hsl(var(--muted-foreground))] md:flex">
+            <Link
+              href="/discover"
+              className="transition-colors hover:text-[hsl(var(--foreground))]"
+            >
+              Discover
+            </Link>
             <Link href="/pulse" className="transition-colors hover:text-[hsl(var(--foreground))]">
               Pulse
             </Link>
