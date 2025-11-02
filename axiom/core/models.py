@@ -179,6 +179,280 @@ def eet_now() -> datetime:
     return datetime.now(EET)
 
 
+class UserProfile(BaseModel):
+    """User profile information."""
+
+    user_id: str = Field(..., description="Supabase user UUID")
+    email: Optional[str] = Field(None, description="User email address")
+    display_name: Optional[str] = Field(None, description="Display name")
+    avatar_url: Optional[str] = Field(None, description="Avatar image URL")
+    created_at: datetime = Field(..., description="Account creation timestamp (EET)")
+    last_login_at: Optional[datetime] = Field(None, description="Last login timestamp (EET)")
+    preferences_json: Optional[str] = Field(None, description="User preferences as JSON string")
+
+    @field_validator("created_at", "last_login_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class FavoriteToken(BaseModel):
+    """User's favorite token."""
+
+    user_id: str = Field(..., description="User UUID")
+    ca: str = Field(..., description="Contract address (lowercased)")
+    chain: str = Field(..., description="Chain identifier (e.g., 'sol')")
+    added_at: datetime = Field(..., description="Timestamp when added (EET)")
+    notes: Optional[str] = Field(None, description="User notes about the token")
+
+    @field_validator("ca", mode="before")
+    @classmethod
+    def normalize_ca(cls, v):
+        """Normalize contract address to lowercase."""
+        if v:
+            return str(v).lower().strip()
+        return v
+
+    @field_validator("added_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class Watchlist(BaseModel):
+    """User's watchlist."""
+
+    watchlist_id: str = Field(..., description="Unique watchlist identifier")
+    user_id: str = Field(..., description="User UUID")
+    name: str = Field(..., description="Watchlist name")
+    description: Optional[str] = Field(None, description="Watchlist description")
+    created_at: datetime = Field(..., description="Creation timestamp (EET)")
+    updated_at: datetime = Field(..., description="Last update timestamp (EET)")
+    is_public: bool = Field(default=False, description="Whether watchlist is public")
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class WatchlistToken(BaseModel):
+    """Token in a watchlist."""
+
+    watchlist_id: str = Field(..., description="Watchlist identifier")
+    ca: str = Field(..., description="Contract address (lowercased)")
+    chain: str = Field(..., description="Chain identifier (e.g., 'sol')")
+    added_at: datetime = Field(..., description="Timestamp when added (EET)")
+    position: Optional[int] = Field(None, description="Display position in watchlist")
+    notes: Optional[str] = Field(None, description="User notes about the token")
+
+    @field_validator("ca", mode="before")
+    @classmethod
+    def normalize_ca(cls, v):
+        """Normalize contract address to lowercase."""
+        if v:
+            return str(v).lower().strip()
+        return v
+
+    @field_validator("added_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class SavedComparison(BaseModel):
+    """Saved token comparison."""
+
+    comparison_id: str = Field(..., description="Unique comparison identifier")
+    user_id: str = Field(..., description="User UUID")
+    name: str = Field(..., description="Comparison name")
+    description: Optional[str] = Field(None, description="Comparison description")
+    created_at: datetime = Field(..., description="Creation timestamp (EET)")
+    updated_at: datetime = Field(..., description="Last update timestamp (EET)")
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class ComparisonToken(BaseModel):
+    """Token in a comparison."""
+
+    comparison_id: str = Field(..., description="Comparison identifier")
+    ca: str = Field(..., description="Contract address (lowercased)")
+    chain: str = Field(..., description="Chain identifier (e.g., 'sol')")
+    position: int = Field(..., description="Position in comparison")
+    added_at: datetime = Field(..., description="Timestamp when added (EET)")
+
+    @field_validator("ca", mode="before")
+    @classmethod
+    def normalize_ca(cls, v):
+        """Normalize contract address to lowercase."""
+        if v:
+            return str(v).lower().strip()
+        return v
+
+    @field_validator("added_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class Alert(BaseModel):
+    """Alert definition."""
+
+    alert_id: str = Field(..., description="Unique alert identifier")
+    user_id: str = Field(..., description="User UUID")
+    ca: str = Field(..., description="Contract address (lowercased)")
+    chain: str = Field(..., description="Chain identifier (e.g., 'sol')")
+    alert_type: str = Field(..., description="Alert type (e.g., 'price_above', 'price_below')")
+    condition_json: str = Field(..., description="Alert condition as JSON string")
+    is_active: bool = Field(default=True, description="Whether alert is active")
+    created_at: datetime = Field(..., description="Creation timestamp (EET)")
+    updated_at: datetime = Field(..., description="Last update timestamp (EET)")
+    last_triggered_at: Optional[datetime] = Field(None, description="Last trigger timestamp (EET)")
+    trigger_count: int = Field(default=0, description="Number of times triggered")
+
+    @field_validator("ca", mode="before")
+    @classmethod
+    def normalize_ca(cls, v):
+        """Normalize contract address to lowercase."""
+        if v:
+            return str(v).lower().strip()
+        return v
+
+    @field_validator("created_at", "updated_at", "last_triggered_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class AlertChannel(BaseModel):
+    """Alert delivery channel."""
+
+    alert_id: str = Field(..., description="Alert identifier")
+    channel_type: str = Field(..., description="Channel type (e.g., 'email', 'webhook', 'push')")
+    channel_config_json: str = Field(..., description="Channel configuration as JSON string")
+    is_enabled: bool = Field(default=True, description="Whether channel is enabled")
+
+
+class AlertEvent(BaseModel):
+    """Alert event (trigger and delivery history)."""
+
+    event_id: str = Field(..., description="Unique event identifier")
+    alert_id: str = Field(..., description="Alert identifier")
+    triggered_at: datetime = Field(..., description="Trigger timestamp (EET)")
+    condition_met_json: str = Field(..., description="Condition that was met as JSON string")
+    delivery_status: str = Field(
+        ..., description="Delivery status (e.g., 'pending', 'delivered', 'failed')"
+    )
+    delivery_attempts: int = Field(default=0, description="Number of delivery attempts")
+    delivered_at: Optional[datetime] = Field(None, description="Delivery timestamp (EET)")
+    error_message: Optional[str] = Field(None, description="Error message if delivery failed")
+
+    @field_validator("triggered_at", "delivered_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
 class TokenOverview(BaseModel):
     """Token overview response model with denormalized data."""
 
