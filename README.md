@@ -124,12 +124,85 @@ python -m axiom.cli.run_scrape --mode=all
 --headful           Run browser in visible mode (default: headless)
 ```
 
+## Analytics Layer
+
+The analytics layer aggregates raw scraper data into actionable token metrics and summaries:
+
+### Token Tables
+
+- **`tokens`**: Denormalized view combining pulse and tracker data per token
+- **`token_metrics`**: Aggregated metrics (price, volume, trades, scores)
+- **`token_summaries`**: Five-bullet human-readable summaries
+- **`token_price_history`**: Time-series price data from pulse snapshots
+
+### Axiom Score
+
+The **Axiom Score** (0-100) is a composite metric derived from:
+
+1. **Volume Score** (30 points): 24h trading volume (normalized to $10k cap)
+2. **Activity Score** (25 points): Number of trades in 24h (normalized to 100 trades)
+3. **Momentum Score** (25 points): 6h price change (positive momentum scores higher)
+4. **Sentiment Score** (20 points): Buy/sell ratio (strong buy pressure scores higher)
+
+Risk flags include: `extreme_pump`, `extreme_dump`, `low_activity`, `extreme_buy_pressure`, `extreme_sell_pressure`.
+
+### Five-Bullet Summary
+
+Each token receives an auto-generated summary with 5 concise bullet points:
+
+1. **Price & Momentum**: Current price with 6h change percentage
+2. **Volume & Activity**: 24h volume and trade count
+3. **Buy/Sell Pressure**: Ratio with qualitative interpretation
+4. **Risk Flags**: Detected anomalies or "None detected"
+5. **Axiom Score**: Final score with rating (Excellent/Good/Fair/Poor)
+
+### Running Analytics
+
+```powershell
+# Compute and update analytics for all tokens
+python -m axiom.cli.analytics --chain=sol
+
+# Output results as JSON
+python -m axiom.cli.analytics --chain=sol --json
+```
+
+The CLI will:
+- Rebuild denormalized token views from `pulse_items` and `tracker_events`
+- Compute price, volume, and trade metrics
+- Calculate Axiom scores
+- Generate five-bullet summaries
+- Display top tokens by score
+
+### Database Helpers
+
+Use the `Database` class to query analytics:
+
+```python
+from axiom.core.db import Database
+
+with Database("data/axiom.duckdb") as db:
+    # List all tokens with metrics
+    tokens = db.list_tokens(chain="sol", limit=10)
+    
+    # Get detailed token overview
+    token = db.get_token("contract_address", chain="sol")
+    
+    # Get pulse snapshots
+    pulse = db.get_token_pulse("contract_address", limit=50)
+    
+    # Get tracker event summary
+    trackers = db.get_token_trackers("contract_address")
+    
+    # Get price history
+    history = db.get_price_history("contract_address")
+```
+
 ## Project Structure
 
 ```
 axiom-scraper/
 ├── axiom/                  # Main package
-│   ├── core/              # Core utilities (config, db, logging, models)
+│   ├── core/              # Core utilities (config, db, logging, models, analytics)
 │   ├── parse/             # Data parsers (pulse, trackers)
 │   ├── persist/           # Database persistence layer
 │   ├── agents/            # Scraper agents
@@ -137,10 +210,11 @@ axiom-scraper/
 ├── configs/               # Configuration files
 │   └── config.yaml        # Main configuration
 ├── scripts/               # Utility scripts
-│   ├── init_db.py        # Database initialization
+│   ├── init_db.py        # Database initialization (includes analytics tables)
 │   └── setup_auth.py     # Authentication setup
 ├── tests/                 # Test suite
 │   ├── unit/             # Unit tests
+│   │   └── analytics/    # Analytics tests
 │   ├── integration/      # Integration tests
 │   └── fixtures/         # Test fixtures
 ├── data/                  # Database and reports (gitignored)

@@ -5,12 +5,12 @@ All timestamps are normalized to EET (Eastern European Time, UTC+2).
 All prices are normalized to USD.
 """
 
+import json
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 import pytz
 from pydantic import BaseModel, Field, field_validator
-
 
 # EET timezone (UTC+2)
 EET = pytz.timezone("Europe/Athens")
@@ -18,7 +18,7 @@ EET = pytz.timezone("Europe/Athens")
 
 class RunMeta(BaseModel):
     """Metadata for a scraper run."""
-    
+
     run_id: str = Field(..., description="Unique run identifier (UUID or timestamp-based)")
     mode: Literal["pulse", "trackers", "all"] = Field(..., description="Scraper mode")
     started_at: datetime = Field(..., description="Run start time (EET)")
@@ -35,7 +35,7 @@ class RunMeta(BaseModel):
     events_inserted: int = Field(default=0, description="Tracker events inserted")
     events_deduped: int = Field(default=0, description="Tracker events deduplicated")
     duration_ms: Optional[int] = Field(None, description="Run duration in milliseconds")
-    
+
     @field_validator("started_at", "finished_at", mode="before")
     @classmethod
     def ensure_eet_timezone(cls, v):
@@ -49,7 +49,7 @@ class RunMeta(BaseModel):
             dt = v
         else:
             raise ValueError(f"Invalid datetime value: {v}")
-        
+
         # Convert to EET
         if dt.tzinfo is None:
             # Assume UTC if naive
@@ -60,10 +60,10 @@ class RunMeta(BaseModel):
 class PulseItem(BaseModel):
     """
     A token snapshot from Pulse feed.
-    
+
     Deduplication key: (ca, segment, floor_minute)
     """
-    
+
     run_id: str = Field(..., description="Associated run ID")
     ca: str = Field(..., description="Contract address (lowercased)")
     segment: str = Field(..., description="Segment category (e.g., 'new', 'top', 'rising')")
@@ -74,7 +74,7 @@ class PulseItem(BaseModel):
     source: Literal["pulse"] = Field(default="pulse", description="Data source")
     raw_json: Optional[str] = Field(None, description="Raw JSON payload for debugging")
     scraped_at: datetime = Field(..., description="Timestamp when scraped (EET)")
-    
+
     @field_validator("ca", mode="before")
     @classmethod
     def normalize_ca(cls, v):
@@ -82,7 +82,7 @@ class PulseItem(BaseModel):
         if v:
             return str(v).lower().strip()
         return v
-    
+
     @field_validator("floor_minute", "scraped_at", mode="before")
     @classmethod
     def ensure_eet_datetime(cls, v):
@@ -95,12 +95,12 @@ class PulseItem(BaseModel):
             dt = v
         else:
             raise ValueError(f"Invalid datetime value: {v}")
-        
+
         # Convert to EET
         if dt.tzinfo is None:
             dt = pytz.utc.localize(dt)
         return dt.astimezone(EET)
-    
+
     @field_validator("floor_minute")
     @classmethod
     def truncate_to_minute(cls, v):
@@ -108,7 +108,7 @@ class PulseItem(BaseModel):
         if v:
             return v.replace(second=0, microsecond=0)
         return v
-    
+
     @field_validator("segment", mode="before")
     @classmethod
     def normalize_segment(cls, v):
@@ -121,10 +121,10 @@ class PulseItem(BaseModel):
 class TrackerEvent(BaseModel):
     """
     A wallet activity event from Trackers feed.
-    
+
     Deduplication key: (wallet, ca, action, tx_time)
     """
-    
+
     run_id: str = Field(..., description="Associated run ID")
     wallet: str = Field(..., description="Wallet address (lowercased)")
     ca: str = Field(..., description="Contract address (lowercased)")
@@ -138,7 +138,7 @@ class TrackerEvent(BaseModel):
     source: Literal["trackers"] = Field(default="trackers", description="Data source")
     raw_json: Optional[str] = Field(None, description="Raw JSON payload for debugging")
     scraped_at: datetime = Field(..., description="Timestamp when scraped (EET)")
-    
+
     @field_validator("wallet", "ca", mode="before")
     @classmethod
     def normalize_addresses(cls, v):
@@ -146,7 +146,7 @@ class TrackerEvent(BaseModel):
         if v:
             return str(v).lower().strip()
         return v
-    
+
     @field_validator("action", mode="before")
     @classmethod
     def normalize_action(cls, v):
@@ -154,7 +154,7 @@ class TrackerEvent(BaseModel):
         if v:
             return str(v).lower().strip().replace(" ", "_")
         return v
-    
+
     @field_validator("tx_time", "scraped_at", mode="before")
     @classmethod
     def ensure_eet_datetime(cls, v):
@@ -167,7 +167,7 @@ class TrackerEvent(BaseModel):
             dt = v
         else:
             raise ValueError(f"Invalid datetime value: {v}")
-        
+
         # Convert to EET
         if dt.tzinfo is None:
             dt = pytz.utc.localize(dt)
@@ -177,3 +177,170 @@ class TrackerEvent(BaseModel):
 def eet_now() -> datetime:
     """Get current datetime in EET timezone."""
     return datetime.now(EET)
+
+
+class TokenOverview(BaseModel):
+    """Token overview response model with denormalized data."""
+
+    ca: str = Field(..., description="Contract address")
+    chain: str = Field(..., description="Chain identifier (e.g., 'sol')")
+    token_name: Optional[str] = Field(None, description="Token name")
+    symbol: Optional[str] = Field(None, description="Token symbol")
+    first_seen_at: Optional[datetime] = Field(None, description="First appearance (EET)")
+    last_seen_at: Optional[datetime] = Field(None, description="Last seen timestamp (EET)")
+    last_pulse_at: Optional[datetime] = Field(None, description="Last pulse update (EET)")
+    last_tracker_at: Optional[datetime] = Field(None, description="Last tracker activity (EET)")
+    latest_segment: Optional[str] = Field(None, description="Latest pulse segment")
+    latest_floor_price: Optional[float] = Field(None, description="Latest floor price (USD)")
+    score: Optional[float] = Field(None, description="Axiom score (0-100)")
+    price_usd: Optional[float] = Field(None, description="Current price (USD)")
+    price_change_1h: Optional[float] = Field(None, description="1-hour price change (%)")
+    price_change_6h: Optional[float] = Field(None, description="6-hour price change (%)")
+    volume_usd_1h: Optional[float] = Field(None, description="1-hour volume (USD)")
+    volume_usd_6h: Optional[float] = Field(None, description="6-hour volume (USD)")
+    volume_usd_24h: Optional[float] = Field(None, description="24-hour volume (USD)")
+    trade_count_1h: Optional[int] = Field(None, description="1-hour trade count")
+    trade_count_6h: Optional[int] = Field(None, description="6-hour trade count")
+    trade_count_24h: Optional[int] = Field(None, description="24-hour trade count")
+    buy_sell_ratio: Optional[float] = Field(None, description="Buy/sell ratio")
+    liquidity_score: Optional[float] = Field(None, description="Liquidity score")
+    risk_flags: List[str] = Field(default_factory=list, description="Risk flags")
+    sparkline: List[float] = Field(
+        default_factory=list, description="Sparkline price points (newest last)"
+    )
+    headline: Optional[str] = Field(None, description="Summary headline")
+    bullet_1: Optional[str] = Field(None, description="Summary bullet 1")
+    bullet_2: Optional[str] = Field(None, description="Summary bullet 2")
+    bullet_3: Optional[str] = Field(None, description="Summary bullet 3")
+    bullet_4: Optional[str] = Field(None, description="Summary bullet 4")
+    bullet_5: Optional[str] = Field(None, description="Summary bullet 5")
+    sentiment: Optional[str] = Field(None, description="Sentiment indicator")
+
+    @field_validator(
+        "first_seen_at", "last_seen_at", "last_pulse_at", "last_tracker_at", mode="before"
+    )
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            return None
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+    @field_validator("risk_flags", mode="before")
+    @classmethod
+    def parse_risk_flags(cls, v):
+        """Parse risk flags from JSON string to list."""
+        if v is None:
+            return []
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                return []
+        return []
+
+    @field_validator("sparkline", mode="before")
+    @classmethod
+    def parse_sparkline(cls, v):
+        """Parse sparkline from JSON string to list."""
+        if v is None:
+            return []
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                return []
+        return []
+
+    @field_validator("ca", mode="before")
+    @classmethod
+    def normalize_ca(cls, v):
+        """Normalize contract address to lowercase."""
+        if v is None:
+            return v
+        return str(v).lower().strip()
+
+    @field_validator("latest_segment", mode="before")
+    @classmethod
+    def normalize_segment(cls, v):
+        """Normalize latest segment to lowercase."""
+        if v is None:
+            return v
+        return str(v).lower().strip()
+
+
+class TokenPulseSnapshot(BaseModel):
+    """Token pulse snapshot from pulse_items."""
+
+    ca: str = Field(..., description="Contract address")
+    chain: str = Field(default="sol", description="Chain identifier")
+    segment: str = Field(..., description="Pulse segment")
+    floor_minute: datetime = Field(..., description="Time bucket (EET)")
+    floor_price: Optional[float] = Field(None, description="Floor price (USD)")
+    token_name: Optional[str] = Field(None, description="Token name")
+    symbol: Optional[str] = Field(None, description="Token symbol")
+    run_id: str = Field(..., description="Scraper run ID")
+    scraped_at: datetime = Field(..., description="Scraped timestamp (EET)")
+
+    @field_validator("floor_minute", "scraped_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise ValueError(f"Invalid datetime value: {v}")
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
+
+
+class TokenTrackerSummary(BaseModel):
+    """Token tracker activity summary from tracker_events."""
+
+    ca: str = Field(..., description="Contract address")
+    chain: str = Field(default="sol", description="Chain identifier")
+    trade_count: int = Field(default=0, description="Total trade count")
+    unique_wallets: int = Field(default=0, description="Unique wallet count")
+    buy_count: int = Field(default=0, description="Buy transaction count")
+    sell_count: int = Field(default=0, description="Sell transaction count")
+    total_volume_usd: Optional[float] = Field(None, description="Total volume (USD)")
+    avg_price_usd: Optional[float] = Field(None, description="Average price (USD)")
+    first_trade_at: Optional[datetime] = Field(None, description="First trade timestamp (EET)")
+    last_trade_at: Optional[datetime] = Field(None, description="Last trade timestamp (EET)")
+    top_actions: Optional[str] = Field(None, description="Most common actions (JSON)")
+
+    @field_validator("first_trade_at", "last_trade_at", mode="before")
+    @classmethod
+    def ensure_eet_datetime(cls, v):
+        """Ensure datetime is in EET."""
+        if v is None:
+            return v
+        if isinstance(v, str):
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            return None
+
+        if dt.tzinfo is None:
+            dt = pytz.utc.localize(dt)
+        return dt.astimezone(EET)
