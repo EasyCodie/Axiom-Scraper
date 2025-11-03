@@ -8,7 +8,7 @@ interface MetricChipProps {
   variant?: 'neutral' | 'success' | 'warning';
 }
 
-const variantClasses: Record<MetricChipProps['variant'], string> = {
+const variantClasses: Record<NonNullable<MetricChipProps['variant']>, string> = {
   neutral: 'bg-white/[0.04] text-white',
   success: 'bg-emerald-500/10 text-emerald-300',
   warning: 'bg-amber-500/10 text-amber-300',
@@ -29,7 +29,7 @@ export function MetricChip({ label, value, delta, variant = 'neutral' }: MetricC
           <span
             className={cn(
               'flex items-center gap-0.5 rounded-full px-1 text-[10px] uppercase tracking-wide',
-              variantClasses[deltaVariant]
+              variantClasses[deltaVariant],
             )}
           >
             <DisplayIcon className="h-3 w-3" />
