@@ -3,7 +3,12 @@
 import * as React from 'react';
 import { FilterIcon, XIcon } from 'lucide-react';
 
-import { DEFAULT_CHAIN, countActiveFilters, type DiscoveryFilters } from '@/lib/discovery';
+import {
+  DEFAULT_CHAIN,
+  countActiveFilters,
+  type ChainId,
+  type DiscoveryFilters,
+} from '@/lib/discovery';
 import { cn } from '@/lib/utils';
 
 import { Badge } from './badge';
@@ -29,10 +34,10 @@ export function FilterDrawer({ value, onApply, onClear, className }: FilterDrawe
     if (rawValue === '') {
       delete next[key];
     } else if (key === 'chain') {
-      next[key] = rawValue;
+      next[key] = rawValue as ChainId;
     } else {
       const numeric = Number(rawValue);
-      next[key] = Number.isNaN(numeric) ? undefined : numeric;
+      (next as any)[key] = Number.isNaN(numeric) ? undefined : numeric;
     }
     setDraft(next);
   };
@@ -56,7 +61,7 @@ export function FilterDrawer({ value, onApply, onClear, className }: FilterDrawe
     <div className={cn('relative', className)}>
       <Button
         variant={activeFiltersCount > 0 ? 'default' : 'ghost'}
-        size="default"
+        size="md"
         onClick={() => setOpen((prev) => !prev)}
         className="gap-2"
       >
@@ -142,19 +147,14 @@ export function FilterDrawer({ value, onApply, onClear, className }: FilterDrawe
               <div className="flex gap-3 pt-4">
                 <Button
                   variant="ghost"
-                  size="default"
+                  size="md"
                   onClick={handleClear}
                   className="flex-1"
                   disabled={activeFiltersCount === 0}
                 >
                   Clear All
                 </Button>
-                <Button
-                  variant="default"
-                  size="default"
-                  onClick={handleApply}
-                  className="flex-1"
-                >
+                <Button variant="default" size="md" onClick={handleApply} className="flex-1">
                   Apply Filters
                 </Button>
               </div>

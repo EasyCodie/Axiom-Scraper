@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import {
   DEFAULT_CHAIN,
@@ -55,7 +55,7 @@ export function DiscoverClient({ tokens, filters, totalTokens, updatedAt }: Disc
         router.replace(query ? `${pathname}?${query}` : pathname);
       });
     },
-    [pathname, router]
+    [pathname, router],
   );
 
   const handleClearFilters = React.useCallback(() => {
@@ -89,7 +89,11 @@ export function DiscoverClient({ tokens, filters, totalTokens, updatedAt }: Disc
         </div>
 
         <div className="flex items-center gap-3">
-          <FilterDrawer value={localFilters} onApply={handleApplyFilters} onClear={handleClearFilters} />
+          <FilterDrawer
+            value={localFilters}
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
+          />
           <div className="flex gap-2">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -110,7 +114,9 @@ export function DiscoverClient({ tokens, filters, totalTokens, updatedAt }: Disc
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-[hsl(var(--muted-foreground))]">
-        <span>Showing {tokens.length} of {totalTokens} tokens</span>
+        <span>
+          Showing {tokens.length} of {totalTokens} tokens
+        </span>
         {activeFiltersCount > 0 && (
           <>
             <span>•</span>
@@ -140,11 +146,7 @@ export function DiscoverClient({ tokens, filters, totalTokens, updatedAt }: Disc
         </div>
       ) : (
         <div
-          className={
-            viewMode === 'grid'
-              ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
-              : 'space-y-4'
-          }
+          className={viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}
         >
           {tokens.map((token) => (
             <TokenCard
